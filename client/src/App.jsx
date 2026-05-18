@@ -12,6 +12,7 @@ import {
   clearAllReceipts,
 } from "./utils/storage.js";
 import { calculateTotalSpending } from "./utils/aggregate.js";
+import { validateReceipt } from "./utils/validate.js";
 
 export default function App() {
   // 起動時にローカルストレージから既存データを読み込む
@@ -22,7 +23,21 @@ export default function App() {
   }, []);
 
   // 新しいレシートが解析されたときの処理
+  // 検証で警告があれば確認ダイアログを表示し、ユーザーに保存可否を選択させる
   const handleReceiptAnalyzed = (data) => {
+    const warnings = validateReceipt(data, receipts);
+
+    if (warnings.length > 0) {
+      const message =
+        "以下の警告があります:\n\n" +
+        warnings.map((w) => `・${w}`).join("\n") +
+        "\n\nそれでも保存しますか？";
+      if (!confirm(message)) {
+        // ユーザーがキャンセルした場合は保存しない
+        return;
+      }
+    }
+
     const newReceipt = addReceipt(data);
     setReceipts((prev) => [...prev, newReceipt]);
   };
